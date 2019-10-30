@@ -25,5 +25,5 @@ WebAutomation.ExtractHtmlTableInExcel   BrowserInstance:  Browser \
 # Finally we save the excel file and close the excel application
 Excel.CloseAndSaveAs Instance: ExcelInstance \
                      DocumentFormat:Excel.ExcelFormat.FromExtension \
-                     DocumentPath: "C:\Users\dpapadimitriou\Desktop\Robin\HTMLTableExtractionFromWeb\StockData.xlsx"
+                     DocumentPath: "C:\source\robin\Robin-Examples\DataExtractionFromWebPage\StockData.xlsx"
 
