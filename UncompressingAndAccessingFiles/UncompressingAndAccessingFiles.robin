@@ -1,0 +1,128 @@
+# First we get the Desktop special folder...
+Folder.GetSpecialFolder SpecialFolder:Folder.SpecialFolder.DesktopDirectory \
+                        SpecialFolderPath=> Desktop
+
+# Then we create our working folder: 
+Folder.Create   FolderPath: Desktop + '\Robin' \
+                FolderName: 'UncompressingAndAccessingFiles' \
+                Folder=> WorkingFolder
+
+# It just prints the path stored to the WorkingFolder variable.
+Console.Write Message: WorkingFolder
+
+
+# It is time to get the files from the folder of the Compression tutorial
+
+# We begin by creating a variable to hold the folder path.
+set PreviousTutorialFolder to Desktop + '\Robin\SimpleTextAndCompression'
+
+# We the use the Folder module to 'see' into the desired folder.
+# We know that we want the .zip file so we are going to retrieve all the .zip files inside the folder.
+Folder.GetFiles Folder: PreviousTutorialFolder \
+                FileFilter:'*.zip' \
+                Files=> Files
+
+# note that the "FileFilter: '*.zip"'" input argument allows us to fetch all the zip files. 
+# If we left it as it was generated we would retrieve all the files contained in the folder.
+# The Files output is a list.
+# We know there is only one file in the folder so we are going to get the first entry in the list
+set ZipFile to Files[0]
+
+# Now we can copy the .zip file to our current working Folder.
+File.Copy   Files: ZipFile \
+            Destination: WorkingFolder \
+            IfFileExists:File.IfExists.Overwrite \
+            CopiedFiles=> ZipFile
+
+# It prints the path to our current working folder.
+Console.Write Message: ZipFile
+
+# We will retrieve the zip file once again, 
+# but this time let's up things a bit..
+Folder.GetFiles Folder: WorkingFolder \
+                FileFilter:'*.zip' \
+                Files=> Files
+
+set ZipFile to Files[0]
+
+# We set a boolean variable that gets its value by checking whether the .zip exists.
+# If it exists the variable is true else, it is false.
+set DoesFileExist to (File.Exists File: ZipFile)
+#set DoesFileExist to false
+
+# If the file exists
+if (DoesFileExist) then
+    # Display a message to the user... 
+    Display.ShowMessage Title:'Uncompression Warning' \
+                        Message: "Wow! The " + ZipFile.name + " exists! Procceeding with uncompression.. "  \
+                        Icon:Display.Icon.Information \
+                        Buttons:Display.Buttons.OK \
+                        DefaultButton:Display.DefaultButton.Button1 \
+                        IsTopMost:True \
+                        ButtonPressed=> ButtonPressed 
+
+    # call the "Compression" module which contains the "UnzipFiles" action. 
+    # We provide the file path and the folder to save the extraction to
+    Compression.UnzipFiles  ArchivePath:ZipFile  \
+                            DestinationFolder: WorkingFolder
+else 
+    #Display a message, informing the user that something went wrong
+    Display.ShowMessage Title:'Failure' \
+                        Message:'Something went wrong. Requisite .zip file not found.' \
+                        Icon:Display.Icon.ErrorIcon \
+                        Buttons:Display.Buttons.OK \
+                        DefaultButton:Display.DefaultButton.Button1 \
+                        IsTopMost:true \
+                        ButtonPressed=> ButtonPressed
+end
+
+# Now that our file is uncompressed we can access it.
+# Let's retrieve the contents of the working folder one more time, this time searching for .txt files.
+Folder.GetFiles Folder: WorkingFolder  \
+                FileFilter:'*.txt'  \
+                Files=> Files
+
+# We know that there is only one .txt file in the Files[] list and that it resides in the first position.
+set TextFile to Files[0]
+
+# We create a variable to store the filepath. 
+# See how we can access the 'name' property of the TextFile, allowing for more dynamic scripting
+set TextFile to WorkingFolder + "\\" + TextFile.name 
+
+# Let's read the contents of the .txt file.
+File.ReadText File:TextFile \
+              Content=> Content
+
+# Display them to the user
+Display.ShowMessage Title:'Retrieved text' \
+                    Message:Content \
+                    IsTopMost:True \
+                    ButtonPressed=> ButtonPressed
+
+# Now that we have the contents of the first .txt file we are going to create a new .txt and copy the contents there.
+set NewTxtFile to WorkingFolder + "\newtextfile.txt"
+
+# We can write the text we retrieved from the .txt we unzipped
+File.WriteText File: NewTxtFile  \
+               TextToWrite: Content
+
+# We can read the new text file
+File.ReadText   File: NewTxtFile  \
+                Content=> Content
+
+# and display it to the user.
+Display.ShowMessage Title:'newtextfile.txt' \
+                    Message:Content \
+                    IsTopMost:true \
+                    ButtonPressed=> ButtonPressed
+
+# There should be two .txts in the working folder now
+Folder.GetFiles Folder: WorkingFolder  \
+                FileFilter:'*.txt'  \
+                Files=> Files
+# Display them to the user
+Display.ShowMessage Title:'Retrieved files' \
+                    Message:Files \
+                    IsTopMost:true \
+                    ButtonPressed=> ButtonPressed
+
