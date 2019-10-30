@@ -1,0 +1,29 @@
+# You should change the path to the .appmask file according to your configuration for the example to work.
+
+# We begin by importing the .appmask file that contains the selector(s).
+import "C:\source\robin\Robin-Examples\DataExtractionFromWebPage\AppMask\BloombergStocks.appmask"
+
+# create a variable to hold the url
+set Website to "https://www.bloomberg.com/markets/stocks/world-indexes/americas"
+
+# We then launch a chrome instance with the url of choice.
+WebAutomation.LaunchChrome  Url: Website \
+                            BrowserInstance=> Browser
+
+# In order to save some time and not re-write the complete control path.
+set TableSelector to BloombergStocks.StockApp.BloombergWebPage.AmericanStocksHTMLTable
+
+# We then run the ExtractHtmlTableInExcel action .
+# We are using the Browser instance we have already launched,
+# the variable that holds the control selector
+# and save the extracted HTML table to an excel instance.
+WebAutomation.ExtractHtmlTableInExcel   BrowserInstance:  Browser \
+                                        Control: TableSelector \
+                                        ExcelInstance=> ExcelInstance
+
+
+# Finally we save the excel file and close the excel application
+Excel.CloseAndSaveAs Instance: ExcelInstance \
+                     DocumentFormat:Excel.ExcelFormat.FromExtension \
+                     DocumentPath: "C:\source\robin\Robin-Examples\DataExtractionFromWebPage\StockData.xlsx"
+
