@@ -1,0 +1,47 @@
+# First we get the Desktop special folder...
+Folder.GetSpecialFolder SpecialFolder:Folder.SpecialFolder.DesktopDirectory \
+                        SpecialFolderPath=> Desktop
+
+# Then we set the folder path for the exercise.
+set WorkingFolder to Desktop + '\Robin\SimpleTextAndCompression'
+
+set MyTxtFile to WorkingFolder + '\mytxtfile.txt'
+
+# Now let's generate some text for the file that we will create.
+# I want to create a 10 line .txt file
+loop i from 0 to 9 step 1
+    Text.Random UseUpperCaseLetters:True \
+                UseLowerCaseLetters:True \
+                UseDigits:True \
+                UseSymbols:True \
+                MinimumLength:6 \
+                MaximumLength:10 \
+                RandomText=> RandomText
+    
+    # Append the new string at the end of the text file in each iteration
+    File.WriteText  File: MyTxtFile \
+                    TextToWrite: RandomText \
+                    AppendNewLine:True \
+                    IfFileExists:File.IfFileExists.Append \
+                    Encoding:File.FileEncoding.Unicode
+end 
+
+# Now we have our fle created let's read its contents and print them as an output
+File.ReadText   File: MyTxtFile \
+                Encoding:File.TextFileEncoding.UTF8 \
+                Content=> Content
+
+Console.Write Message: Content
+
+# Before we proceed with the compression it would be wise to 
+# create a variable that will keep the path to the .zip file.
+# Note that this will be the final name of the .zip file.
+set MyZippedFile to WorkingFolder + '\MyZippedFile.zip'
+
+#We can now proceed with the Compression.
+Compression.ZipFiles    ArchivePath: MyZippedFile \
+                        FilesToZip: MyTxtFile  \   
+                        CompressionLevel:Compression.CompressionLevel.Normal \
+                        Password:'' \       
+                        ArchiveComment:'' \
+                        ZipFile=> ZipFile
