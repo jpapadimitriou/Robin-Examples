@@ -1,0 +1,74 @@
+# Setting variables
+# The Hllapi path
+set HllapiPath to "C:\Program Files\BlueZone\7.1\ehlapi64.dll"
+# The name of the session.
+# Note that sessions take single character names in ascending order (A, B, C, ....)
+
+set SessionName to "A"
+
+# We begin by connecting to the already running session.
+# Hllapi is utilized.
+TerminalEmulation.OpenSession   HllapiPath: HllapiPath \
+                                SessionName: SessionName \
+                                Session=> TerminalSession
+
+# Just to validate that the connection was established let's grab the terminal text and...
+TerminalEmulation.GetTextFromScreen Session:TerminalSession \
+                                    Text=> TerminalText
+
+# print it in the Console output.
+Console.Write Message: TerminalText
+
+
+# Just a loop that prints \\ ten times, to create space between messages.
+loop i from 1 to 10 step 1
+    Console.Write Message: "\\"
+end
+
+# move the cursor to a specific position in in the emulator
+TerminalEmulation.MoveCursor    Session: TerminalSession \
+                                Row: 5 \
+                                Column: 25 
+
+# type the username
+TerminalEmulation.SetTextOnCursorPosition   Session: TerminalSession \
+                                            Text: "enter your username here"
+
+# wait for 2 seconds
+wait 2
+
+# now move to a different posiition
+TerminalEmulation.MoveCursor    Session: TerminalSession \
+                                Row: 6  \
+                                Column: 25
+
+# type the password
+TerminalEmulation.SetTextOnCursorPosition   Session: TerminalSession \
+                                            Text: "enter your password here"
+
+# send the enter keystroke
+TerminalEmulation.SendKey   Session: TerminalSession \
+                            ControlKey:TerminalEmulation.ControlKey.Transmit
+
+wait 1
+
+# Remove all displayed messages except pending questions
+TerminalEmulation.SendKey   Session: TerminalSession \
+                            ControlKey:TerminalEmulation.ControlKey.F16
+
+# Print remaining messages
+TerminalEmulation.GetTextFromScreen Session: TerminalSession \
+                                    Text=> TerminalText
+
+Console.Write Message: TerminalText
+
+wait 1
+
+# Exit
+TerminalEmulation.SendKey   Session: TerminalSession \
+                            ControlKey:TerminalEmulation.ControlKey.F3
+
+wait 1
+
+# Finally we terminate the session.
+TerminalEmulation.CloseSession Session: TerminalSession
