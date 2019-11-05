@@ -1,0 +1,65 @@
+# Generate a list of 10 random numbers
+Variables.ListOfRandomNumbers MinimumValue:0 \
+                              MaximumValue:100 \
+                              NumbersCount:10 \
+                              AllowDuplicates:true \
+                              RandomNumbers=> RandomNumbers
+Console.Write Message: RandomNumbers
+
+# Create a variable to hold the sum
+set sum to 0
+# Create the lists to populate
+set evenList to []
+set oddList to []
+
+# Let's create a function
+# In programming, a named section of a program that performs a specific task. 
+# In this sense, a function is a type of procedure or routine. 
+# Some programming languages make a distinction between a function, which returns a value 
+# and a procedure, which performs some operation but does not return a value.
+# our function here has two input parameters, num1 and num2, adds them and calculates the sum total which is stored
+# in the 'sum' variable we declared at the top of our example
+function CalculateSum num1, num2
+    set sum to num1 + num2
+end
+
+
+# Let's create another function that seperates Odd from Even numbers and stores them to the appropriate list
+function SeperateOddsAndEvens num
+    # check if the number is even by checking the remainder of the division between the current number and 2 is 0
+    if ( num mod 2 = 0 ) then
+        set evenList to evenList + num
+    #if it isn't, the number is odd
+    else
+        set oddList to oddList + num
+    end
+end
+
+# Now we loop through each number in the RandomNumbers list
+loop foreach number in RandomNumbers
+    # we must first convert each text value in the list to a numeric value to process it further
+    Text.ToNumber Text:number  \
+                  Number=> number
+    # We call the first function we created, to calculate the sum total of all the numbers in the list
+    call CalculateSum num1:sum num2:number
+    # We call the second function we created, to seperate odds from evens
+    call SeperateOddsAndEvens num:number
+end
+
+# Finally we sort our lists.
+# The default sorting is by ascending order
+Variables.SortList List:evenList  \
+                   SortedList=> evenList
+
+Variables.SortList List:oddList  \
+                   SortedList=> oddList
+
+Console.Write Message: 'This is the sum total: ' + sum
+Console.Write Message: ''
+Console.Write Message: ''
+Console.Write Message: 'This is the even number list:'
+Console.Write Message: evenList
+Console.Write Message: ''
+Console.Write Message: ''
+Console.Write Message: 'This is the odd number list'
+Console.Write Message: oddList
