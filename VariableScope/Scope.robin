@@ -1,0 +1,88 @@
+# Robin supports what is called 'scoping' in the programming world.
+# What is Scope?
+# In computer programming, the scope of a name binding – an association of a name to an entity, 
+# such as a variable – is the region of a computer program where the binding is valid: 
+# where the name can be used to refer to the entity. 
+# Such a region is referred to as a scope block. - via Wikipedia
+# In simpler words: scope is the 'range' in which a variable is valid/can be seen or accessed.
+
+# In Robin, variables fall into two categories: local and global
+
+# By default, all variables that are declared in the outer levels of a Robin script are global, which means that they can be accessed by anywhere inside the script.
+# Another thing to keep in mind regarding global variables is that their value is consistent and changes affect the value throughout its existence.
+
+# This is a variable with a global scope, this means it can be accessed anywhere inside our script
+set aSimpleGlobalVariable to "Hey there! My scope is global!"
+
+Console.Write Message: aSimpleGlobalVariable
+
+function RandomFunc
+    Console.Write Message: aSimpleGlobalVariable
+end
+
+call RandomFunc
+
+# Our script is checked and runs without any problems. 
+# We declared a variable and given it a value and we saw that it can be accessed from anywhere inside our script
+# Let's see another example with value change.
+
+set globalNumericVariable to 20
+
+Console.Write Message: "Outside of function: " + globalNumericVariable
+
+function SimpleFunction 
+    Console.Write Message: "Inside a function before changing the value: " + globalNumericVariable
+    set globalNumericVariable to 89
+    Console.Write Message: "Inside a function after changing the value: " + globalNumericVariable
+end
+
+call SimpleFunction
+
+Console.Write Message: "Outside of function after the change: " + globalNumericVariable
+
+# we created a numeric variable and gave it an initial value
+# then we printed the variable and as expected it was the one we gave at first
+# we created and called a function that calls the variable and prints it at first. the initial value remains the same.
+# then it changes the value and prints it again. as expected the value is now the last one given. 
+# after that we print again the variable. note that we are now again in the main body of our script.
+# the variable has retained the value it was given inside the previously called function.
+
+
+# Local Scope
+# Local Scoping is used inside functions in Robin.
+# Every variable that is declared inside a function is local to it by default.
+# That means that this variable can't be accessed by any level above.
+
+function SampleFunction1 string1, string2
+    set localVariable to string1 + string2
+end
+
+
+# localVariable is local to the function
+function SampleFunction2 string1, string2, output localVariable
+    set localVariable to string1 + string2
+end
+
+# this command is going to create a concatenated string (Hello World!) but the variable won't be available anywhere else, so we are going to have to mark the result as an 'output' when creating the function.
+# By doing so we are practically creating a new global variable to store the output of the function, in this case we are storing the value contained in 'localVariable' into the global variable 'SampleFunction2Output'
+call SampleFunction2 string1:'Hello ' string2:'World!' localVariable => SampleFunction2Output
+Console.Write Message: SampleFunction2Output
+
+# this command is going to return an error
+# Console.Write Message: localVariable
+
+
+# Variables declared inside functions can be of global scope if their name is preceded by the two following characters "g:".
+# This means that the variable is of global scope and can be accessed from anywhere in your script.
+# Repeating the same example as before but with an internal variable declared as global:
+function SampleFunction3 string1, string2
+    set g: globalVariableInFunction to string1 + string2
+end
+
+call SampleFunction3 string1: 'Now I am: ' string2:'global'
+
+# this time the script will check without any errors and the command will print the string
+Console.Write Message: globalVariableInFunction
+
+
+
