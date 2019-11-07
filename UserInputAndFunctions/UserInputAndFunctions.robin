@@ -1,0 +1,232 @@
+##################################################### variables #############################################################
+
+# We get the Desktop folder
+Folder.GetSpecialFolder SpecialFolder:Folder.SpecialFolder.DesktopDirectory \
+                        SpecialFolderPath=> Desktop
+
+
+# A global variable to hold the path to the Excel file
+set FilePath to ""
+
+################################################# end of variables ##########################################################
+
+
+####################################################### main section ########################################################
+
+# label to be able to redirect the flow of the process
+label number_input
+
+# Initial display asking from the user a numeric input
+Display.InputDialog Title:'Plethora of generated numbers' \
+                    Message:'How many numbers would you like to generate?' \
+                    DefaultValue: 10 \
+                    InputType:Display.InputType.SingleLine \
+                    IsTopMost:True \
+                    UserInput=> PlethoraOfNumbers \
+                    ButtonPressed=> ButtonPressed
+                        
+# The input has to be converted to a number for further processing
+Text.ToNumber   Text: PlethoraOfNumbers  \
+                Number=> PlethoraOfNumbers
+# in case the user hasn't inputed a numeric value
+on error 
+    # call a function to deal with the error
+    call ThrowErrorMessage
+end
+
+# call PopulateExcel function
+call PopulateExcel HowmanyNumbers:PlethoraOfNumbers
+
+# call GetResults function
+call GetResults SumTotal=> SumTotal \
+                SumWithoutDuplicates=> SumTotalWithoutDuplicates \
+                MinValue=> MinValue \
+                MaxValue=> MaxValue
+
+# display a message with the results
+Display.ShowMessage Title:'Results' \
+                    Message:$'''
+                                Sum total:  %SumTotal%  
+                                Sum total without duplicates: %SumTotalWithoutDuplicates% 
+                                Minimum value: %MinValue%  
+                                Maximum value: %MaxValue% 
+                            '''\
+                    Icon:Display.Icon.None \
+                    Buttons:Display.Buttons.OK \
+                    DefaultButton:Display.DefaultButton.Button1 \
+                    IsTopMost:True \
+                    ButtonPressed=> ButtonPressed
+
+#################################################### end of main section ####################################################
+
+
+##################################################### functions #############################################################
+
+# This function is called in case the user input is invalid
+function ThrowErrorMessage
+    Display.ShowMessage Title:'Wrong input type' \
+                        Message:'Please enter a numeric value' \
+                        Icon:Display.Icon.Warning \
+                        Buttons:Display.Buttons.OK \
+                        DefaultButton:Display.DefaultButton.Button1 \
+                        IsTopMost:True \
+                        ButtonPressed=> ButtonPressed
+    # show the number input dialog again
+    goto number_input
+end
+
+# this function is responsible for creating a list of random numbers, its only input is the plethora of numbers.
+function PopulateExcel HowManyNumbers    
+    # Create a list of random numbers.
+    # NumbersCount input property is populated with the variable we provided as input to the function
+    Variables.ListOfRandomNumbers   MinimumValue:0 \
+                                    MaximumValue:100 \
+                                    NumbersCount:HowManyNumbers \
+                                    AllowDuplicates:True \
+                                    RandomNumbers=> g:RandomNumbers
+    
+    # we can call other functions inside a function
+    call CreateExcelInstance
+end
+
+
+# function that produces and modifies the excel we want to produce.
+# we pass no parameters to it.
+function CreateExcelInstance 
+    # Create a new excel file
+    Excel.Launch Instance=> ExcelInstance
+    
+    # Add a worksheet after the already existing one.
+    Excel.AddWorksheet  Instance: ExcelInstance \
+                        Name: "Sheet2" \
+                        WorksheetPosition:Excel.WorksheetPosition.Last
+
+    # Set the new sheet as the active working sheet
+    Excel.ActivateWorksheetByIndex  Instance: ExcelInstance  \
+                                    Index: 2
+
+    # loop through the random numbers list
+    # the Count property returns as the total number of entries in the list
+    loop i from 0 to (RandomNumbers.Count - 1)
+        # store each number in a new Row each time
+        Excel.WriteCell Instance: ExcelInstance \
+                        Value: RandomNumbers[i] \
+                        Column: 1 \
+                        Row: ( i + 1 )
+    end
+
+    # display a message to the user 
+    # to input the name he wants to use for the storage of the file
+    Display.InputDialog Title:'Save Excel as...' \
+                        Message:'Enter the title you want for the Excel file.' \
+                        DefaultValue:'NewFile' \
+                        InputType:Display.InputType.SingleLine \
+                        IsTopMost:true \
+                        UserInput=> UserInput \
+                        ButtonPressed=> ButtonPressed
+    # change the global variable FilePath by utilizing the User input for the excel file name
+    set FilePath to Desktop + '\\' + UserInput + '.xlsx'
+
+    # save and close the excel file
+    Excel.CloseAndSaveAs    Instance: ExcelInstance \ 
+                            DocumentPath: FilePath
+end
+
+
+
+# the funcion responsible for returning the results
+function GetResults output SumTotal, output SumWithoutDuplicates, output MinValue, output MaxValue
+
+    # initialize output variables to be ready for use internally
+    set SumTotal to 0
+    set SumWithoutDuplicates to 0
+    set MinValue to 0
+    set MaxValue to 0
+    
+    call RetrieveExcelValues ExcelDataTable=> ExcelDataTable
+
+    #Fist of all we create an empty list to store the numbers we have retrieved from the excel file
+    set ExtractedExcelDataList to []
+
+    # Note that all of the values we retrieved are stored as text values.
+    # We must first convert each text value to a numeric one.
+    loop foreach value in ExcelDataTable        
+        set ExtractedExcelDataList to ExtractedExcelDataList + value    
+    end
+
+    set NumericList to []
+    
+    loop foreach value in ExtractedExcelDataList
+        Text.ToNumber   Text: value \
+                        Number=> TextAsNumber
+        set NumericList to NumericList + TextAsNumber
+    end
+
+    call CalculateSumTotal  list: NumericList \
+                            sum=> SumTotal    
+    
+    # remove any potential duplicate items
+    Variables.RemoveDuplicateItemsFromList  List: NumericList \
+                                            NewList=> ExtractedExcelDataListWithoutDuplicates
+
+    #loop to calcute the sum total with removed duplicates
+    call CalculateSumTotal  list: ExtractedExcelDataListWithoutDuplicates \
+                            sum=> SumWithoutDuplicates
+
+    # Then let's sort the list
+    Variables.SortList  List: ExtractedExcelDataListWithoutDuplicates \
+                        SortedList=> SortedList
+
+    # We must get the final position of the list for the maximum number.
+    # This is achieved by getting the total count of items
+    set ListLength to SortedList.count
+    set MinValue to SortedList[0]
+    set MaxValue to SortedList[ListLength - 1]
+end
+
+# function that opens and retrieves values from an appointed excel file
+function RetrieveExcelValues output ExcelDataTable 
+    Excel.LaunchAndOpen Path:FilePath  \
+                        Visible:True \
+                        Instance=> ExcelInstance
+                        
+    # then we use the ActivateWorksheetByIndex to set the prefered active worksheet
+    Excel.ActivateWorksheetByIndex  Instance:ExcelInstance  \
+                                    Index: 2
+
+    # We need to get all the populated cells
+    Excel.GetFirstFreeColumnRow Instance:ExcelInstance  \
+                                FirstFreeColumn=> FirstFreeColumn \
+                                FirstFreeRow=> FirstFreeRow
+
+    set TotalRows to FirstFreeRow-1
+    set TotalColumns to FirstFreeColumn-1
+
+    # Since we now know the range of cells we have to parse, we read from this selection by utilizing the ReadCells action
+    Excel.ReadCells Instance:ExcelInstance  \
+                    StartColumn:1  \
+                    StartRow:1  \
+                    EndColumn:TotalColumns  \
+                    EndRow:TotalRows  \
+                    ReadAsText:Yes \
+                    FirstLineIsHeader:False \
+                    Value=> ExcelDataTable
+    
+    # close Excel
+    Excel.Close Instance: ExcelInstance
+end
+
+# function that calculates the sum total of a numeric list
+function CalculateSumTotal list, output sum
+    # initialize the sum variable
+    set sum to 0
+    #loop to calcute the sum total
+    loop foreach value in list
+           set sum to value + sum
+    end
+end
+
+################################################# end of functions section ##################################################
+
+
+####################################################### end of script #######################################################
