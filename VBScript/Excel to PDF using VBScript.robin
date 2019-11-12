@@ -1,0 +1,22 @@
+#Retrieve user's Desktop directory as a special folder
+Folder.GetSpecialFolder SpecialFolder:Folder.SpecialFolder.DesktopDirectory SpecialFolderPath=> Desktop
+
+
+#Display a select file dialog box
+Display.SelectFile Title:'Please Select Excel Document to be converted to PDF' InitialDirectory: Desktop \
+FileFilter:'' IsTopMost:True CheckIfFileExists:False SelectedFile=> SelectedFile ButtonPressed=> ButtonPressed
+
+
+#If the user picks one of the desired Excel document formats, run the VBScript Code to convertit into PDF and store it with the same name at the same folder
+if SelectedFile.Exists = True and (SelectedFile.Extension ='.xlsx' or SelectedFile.Extension ='.xls'or SelectedFile.Extension ='.xlsm' or SelectedFile.Extension ='.xlsb') then
+
+    System.RunVBScript VBScriptCode:''''Dim Excel
+    Dim ExcelDoc
+    Set Excel = CreateObject("Excel.Application")
+    Set ExcelDoc = Excel.Workbooks.open("'''+SelectedFile+'''")
+    Excel.ActiveSheet.ExportAsFixedFormat 0, "'''+SelectedFile.Directory+'\\'+SelectedFile.NameWithoutExtension+'''.pdf" ,0, 1, 0,,,0
+    Excel.ActiveWorkbook.Close
+    Excel.Application.Quit''' ScriptError=> ScriptError ScriptOutput=> ScriptOutput
+    else 
+        Display.ShowMessage Title:'' Message:'Invalid request' Icon:Display.Icon.ErrorIcon Buttons:Display.Buttons.OK DefaultButton:Display.DefaultButton.Button1 IsTopMost:False ButtonPressed=> ButtonPressed
+end
