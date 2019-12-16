@@ -1,11 +1,9 @@
 #**************************************************************************************************************************************************************#
-
-set XmasRadio to "https://www.internet-radio.com/station/cd1019xmas/"
+set XmasRadio to "https://www.liveradio.ie/stations/christmas-fm"
 
 WebAutomation.LaunchChrome  Url: XmasRadio \
-                            WindowState:WebAutomation.BrowserWindowState.Minimized \
+                            WindowState:WebAutomation.BrowserWindowState.Normal \
                             BrowserInstance=> Browser
-
 
 #**************************************************************************************************************************************************************#
 #**************************************************************************************************************************************************************#
