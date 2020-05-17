@@ -1,0 +1,185 @@
+####################################### .appmask files import ##############################################
+# .appmask files must always be imported at the top of the script
+import "C:\JiraAppmask.appmask"
+################################################## Set-up ##################################################
+# variable pointing to the Desktop directory
+Folder.GetSpecialFolder SpecialFolder:Folder.SpecialFolder.DesktopDirectory \
+                        SpecialFolderPath=> Desktop
+                        
+set excelFilePath to Desktop + "\test.xlsx"
+# variable to hold the path to the excel file we want to open
+# note: we will input a false value on purpose to break the test. 
+set falsePath to Desktop + "nonexistentfile.xlsx"
+
+# variable to hold the url to our jira account
+set projectsURL to "https://robincommunity.atlassian.net/secure/BrowseProjects.jspa"
+
+############################################################################################################
+Console.Write Message: " "
+Console.Write Message: "================================================================"
+Console.Write Message: " "
+
+
+#Test Excel.Launch & Excel.Close
+set FailSeverity to "Highest"
+set CurrentTest to "Test Excel.Launch & Excel.Close"
+Console.Write Message: ">>> Executing " + CurrentTest
+set TestOutput to "OK"
+Excel.Launch Instance=> ExcelInstance
+Excel.Close Instance: ExcelInstance
+on error 
+    set TestOutput to "ERROR"
+    call OpenJiraTicket SummaryInput: "Excel.Close won't terminate Excel Instance" \
+                        DescriptionInput: "Failure during " + CurrentTest + " smoke test." \
+                        Priority: FailSeverity
+end
+Console.Write Message: CurrentTest +": " +TestOutput
+Console.Write Message: " "
+Console.Write Message: "================================================================"
+Console.Write Message: " "
+
+#Test Excel.Write & Excel.Read
+set FailSeverity to "High"
+set CurrentTest to "Test Excel.Write & Excel.Read"
+Console.Write Message: ">>> Executing " + CurrentTest
+Excel.Launch Instance=> ExcelInstance
+Excel.Write Instance: ExcelInstance \
+            Value: "This is test text"
+Excel.Read  Instance: ExcelInstance \
+            Value=> Value
+if ( value[0] = "This is test text" ) then
+    set TestOutput to "OK"
+    Console.Write Message: CurrentTest +": " +TestOutput
+else
+    set TestOutput to "ERROR"
+    Console.Write Message: CurrentTest +": " +TestOutput
+    call OpenJiraTicket SummaryInput: "Excel.Write/Read fail" \
+                        DescriptionInput: "Failure during " + CurrentTest + " smoke test." \
+                        Priority: FailSeverity
+end
+Console.Write Message: " "
+Console.Write Message: "================================================================"
+Console.Write Message: " "
+
+
+#Test Excel.Save
+set FailSeverity to "Medium"
+set CurrentTest to "Test Excel.Save"
+Console.Write Message: ">>> Executing " + CurrentTest
+set TestOutput to "OK"
+Excel.Save Instance: ExcelInstance
+on error
+    set TestOutput to "ERROR"
+    call OpenJiraTicket SummaryInput: "Excel.Save won't save the Excel file" \
+                        DescriptionInput: "Failure during " + CurrentTest + " smoke test." \
+                        Priority: FailSeverity
+end
+Console.Write Message: CurrentTest +": " +TestOutput
+Console.Write Message: " "
+Console.Write Message: "================================================================"
+Console.Write Message: " "
+
+#Test Excel.LaunchAndOpen
+set FailSeverity to "Low"
+set CurrentTest to "Test Excel.LaunchAndOpen"
+Console.Write Message: ">>> Executing " + CurrentTest
+set TestOutput to "OK"
+Excel.LaunchAndOpen Path: falsePath \
+                    Instance=> ExcelInstance
+on error
+    set TestOutput to "ERROR"
+    call OpenJiraTicket SummaryInput: "Excel.LaunchAndOpen won't open the declared file" \
+                        DescriptionInput: "Failure during " + CurrentTest + " smoke test." \
+                        Priority: FailSeverity
+end
+Console.Write Message: CurrentTest +": " +TestOutput
+Console.Write Message: " "
+Console.Write Message: "================================================================"
+Console.Write Message: " "
+
+########################################## <Teardown> #########################################################
+Excel.Close Instance: ExcelInstance
+########################################## <Teardown> #########################################################
+
+
+################################################# <Functions> #################################################
+
+##################################### <OpenJiraTicket function> ###############################################
+/# 
+    function that has the user input as input arguments. 
+    all the web automation actions (UI related) is happening inside here.
+#/
+
+
+function OpenJiraTicket SummaryInput, DescriptionInput, Priority
+
+    # Get current Date and Time
+    DateTime.Local  DateTimeFormat:DateTime.DateTimeFormat.DateAndTime \
+                CurrentDateTime=> CurrentDateTime
+        
+    # launch Firefox and navigate to the jira page
+    WebAutomation.LaunchFirefox Url: projectsURL \
+                                WindowState:WebAutomation.BrowserWindowState.Minimized \
+                                BrowserInstance=> Browser
+
+    wait 5
+        
+    # click on the "Create new Issue" button
+    WebAutomation.Click BrowserInstance: Browser \
+                        Control: JiraAppmask.Jira.CreateIssueWebPage.CreateNewIssueButton
+
+
+    wait 2
+    # click the "Type" dropdown
+    WebAutomation.Click BrowserInstance: Browser \
+                        Control: JiraAppmask.Jira.CreateIssueWebPage.IssueTypeDropdown
+        
+    wait 2
+    # choose "Bug" option
+    WebAutomation.FormFilling.PopulateTextField BrowserInstance: Browser \
+                                                Control: JiraAppmask.Jira.CreateIssueWebPage.IssueTypeDropdown \
+                                                Text: "Bug" \
+                                                EmulateTyping:False \
+                                                UnfocusAfterPopulate:True
+    
+    wait 2
+    # populate the "Summary" textbox
+    WebAutomation.FormFilling.PopulateTextField BrowserInstance: Browser \
+                                                Control: JiraAppmask.Jira.CreateIssueWebPage.SummaryTextbox \
+                                                Text: SummaryInput + " [" + CurrentDateTime + "]" \
+                                                EmulateTyping:True \
+                                                UnfocusAfterPopulate:False
+
+    wait 2
+    # populate the "Description" textbox
+    WebAutomation.FormFilling.PopulateTextField BrowserInstance: Browser \
+                                                Control: JiraAppmask.Jira.CreateIssueWebPage.DescriptionTextbox \
+                                                Text: DescriptionInput \
+                                                EmulateTyping:True \
+                                                UnfocusAfterPopulate:False
+    wait 2
+    # click on the Priority dropdown
+    WebAutomation.Click BrowserInstance: Browser \
+                        Control: JiraAppmask.Jira.CreateIssueWebPage.PriorityDropdown
+
+    
+         wait 2
+         # select "Highest" option from the priority dropdown
+         WebAutomation.FormFilling.PopulateTextField BrowserInstance: Browser \
+                                                     Control: JiraAppmask.Jira.CreateIssueWebPage.PriorityDropdown \
+                                                     Text: Priority \
+                                                     EmulateTyping:False \
+                                                     UnfocusAfterPopulate:True
+    
+    wait 2
+    # Click the "Create" button 
+    WebAutomation.Click BrowserInstance: Browser \
+                        Control: JiraAppmask.Jira.CreateIssueWebPage.CreateIssueButton
+
+    wait 2
+    # close Firefox
+    WebAutomation.CloseWebBrowser BrowserInstance: Browser
+end
+##################################### </PopulateIssueFields function> #########################################
+
+################################################ </Functions> #################################################
